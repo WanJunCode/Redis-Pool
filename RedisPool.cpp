@@ -20,12 +20,11 @@ RedisPool::RedisPool(	std::string server,
 
 void RedisPool::init(){
 	for(unsigned int i=0;i<conns_min_;++i){	
-		// auto conn = Redis::create(server_,port_,password_);
 		auto conn = new Redis(server_,port_,password_);
 		if(conn->is_valid()){								// 判断该连接是否可用
 			conn->setUseable();								// 设置为可用
 			conn->attach(this);								// 给连接绑定连接池
-			cedisVector.push_back(conn);					// 插入cedisVector队尾部
+			redis_vec.push_back(conn);					// 插入cedisVector队尾部
 		}else{
     		printf("fail to create a conn\n");
 		}
@@ -34,10 +33,10 @@ void RedisPool::init(){
 
 
 RedisPool::~RedisPool(){
-	while(!cedisVector.empty()){
-		auto tmp = cedisVector.back();
+	while(!redis_vec.empty()){
+		auto tmp = redis_vec.back();
 		// 防止循环引用
-		cedisVector.pop_back();
+		redis_vec.pop_back();
 		delete tmp;
 	}
 	if(Redis::count>0){
@@ -50,11 +49,11 @@ Redis *RedisPool::grabCedis(){
 	std::unique_lock<std::mutex> locker(mutex_);
 	static std::atomic_llong mid(1);
 	// 有可能　llong 都使用完毕的情况
-	int index = (mid++ % cedisVector.size());
-	while(!cedisVector[index]->getuseable()){
-		index = (mid++ % cedisVector.size());
+	int index = (mid++ % redis_vec.size());
+	while(!redis_vec[index]->getuseable()){
+		index = (mid++ % redis_vec.size());
 	}
-	return cedisVector[index];
+	return redis_vec[index];
 }
 
 void RedisPool::reuseCedis(){
