@@ -31,7 +31,6 @@ void RedisPool::init(){
 	}
 }
 
-
 RedisPool::~RedisPool(){
 	while(!redis_vec.empty()){
 		auto tmp = redis_vec.back();
